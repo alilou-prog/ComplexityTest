@@ -50,11 +50,14 @@ bool MainWindow::checkRange() const
 QString run(int n)
 {
     QProcess p;
-    QString command = "/usr/bin/time -f \"%e elapsed\" "
-                      "/home/ali/qt_projects/ComplexityTest/algo_main " + QString::number(n);
+    QString command = "/bin/bash -c "
+                     " \"time "
+                      "/home/ali/qt_projects/ComplexityTest/algorithm " + QString::number(n)
+                    + " \"";
     p.startCommand(command);
     p.waitForFinished();
 
+    // display output of the selection algorithm
     QString stdout = p.readAllStandardOutput();
     qDebug() << stdout;
 
@@ -73,7 +76,7 @@ void MainWindow::start()
         int to = ui->toLineEdit->text().toInt();
         int step = ui->stepLineEdit->text().toInt();
 
-        while(from < to)
+        while(from <= to)
         {
             outputList <<  run(from);
             from += step;
