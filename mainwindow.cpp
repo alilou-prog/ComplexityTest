@@ -7,16 +7,21 @@
 #include <QStringListModel>
 #include <QListView>
 #include <QStringList>
+#include <QElapsedTimer>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , mBinDir {"/home/ali/qt_projects/ComplexityTest/bin"}
 {
     ui->setupUi(this);
     // connect exit button
     connect(ui->exitButton, &QPushButton::clicked, this, &MainWindow::close);
     // connect run button
     connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::start);
+    // connect select button
+    connect(ui->selectBinButton, &QPushButton::clicked, this, &MainWindow::selectBin);
 
     // setup validators
     auto fromToVal = new QIntValidator(0,10000000);
@@ -25,6 +30,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto stepVal = new QIntValidator(1,1000000);
     ui->stepLineEdit->setValidator(stepVal);
+
+    // setup selectBin line edit
+    ui->selectBinLineEdit->setText(mBinFile);
 }
 
 MainWindow::~MainWindow()
@@ -32,9 +40,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::checkRange() const
+bool MainWindow::check() const
 {
-    // get the range
+    // check weather a file is selected
+    if(ui->selectBinLineEdit->text() == "")
+        return false;
+
+    // check the range
     int from = ui->fromLineEdit->text().toInt();
     int to = ui->toLineEdit->text().toInt();
     int step = ui->stepLineEdit->text().toInt();
@@ -47,27 +59,43 @@ bool MainWindow::checkRange() const
     return true;
 }
 
-QString run(int n)
+QString run(QString binFile, int n) // binFile should be absolute path of the bin file
 {
     QProcess p;
     QString command = "/bin/bash -c "
-                     " \"time "
-                      "/home/ali/qt_projects/ComplexityTest/algorithm " + QString::number(n)
-                    + " \"";
+                      + QString(" \"")
+                      + binFile + " "
+                      + QString::number(n)
+                      + " \"";
+    QElapsedTimer timer;
+    timer.start();
+
     p.startCommand(command);
     p.waitForFinished();
 
-    // display output of the selection algorithm
-    QString stdout = p.readAllStandardOutput();
-    qDebug() << stdout;
+    qint64 time { timer.elapsed() };
 
-    QString elapsedTime = "for n=" + QString::number(n) + ":\t "  + p.readAllStandardError();
+    QString elapsedTime = "for n=" + QString::number(n) + ":\t "  + QString::number(time) + " ms";
     return elapsedTime;
+}
+
+void MainWindow::selectBin()
+{
+    QString binFile = QFileDialog::getOpenFileName(this,
+                                                   "Select binary file",
+                                                   mBinDir,
+                                                   "");
+    if(binFile != "")
+    {
+        ui->selectBinLineEdit->setText(binFile);
+        mBinFile = binFile;
+    }
 }
 
 void MainWindow::start()
 {
-    if(checkRange())
+
+    if(check())
     {
         // QString list for QStringListModel
         QStringList outputList; // managed by the mainwindow
@@ -78,7 +106,7 @@ void MainWindow::start()
 
         while(from <= to)
         {
-            outputList <<  run(from);
+            outputList <<  run(mBinFile,from);
             from += step;
         }
 

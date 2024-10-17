@@ -20,10 +20,13 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    bool checkRange() const;
+    QString mBinDir;
+    QString mBinFile;
+    bool check() const;
 
 private slots:
     void start();
+    void selectBin();
 
 };
 #endif // MAINWINDOW_H
