@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "plotwindow.h"
+
 #include <QIntValidator>
 #include <QString>
 #include <QProcess>
@@ -9,11 +11,13 @@
 #include <QStringList>
 #include <QElapsedTimer>
 #include <QFileDialog>
+#include <QVector>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , mBinDir {"/home/ali/qt_projects/ComplexityTest/bin"}
+    , mpPlot {nullptr}
 {
     ui->setupUi(this);
     // connect exit button
@@ -59,7 +63,7 @@ bool MainWindow::check() const
     return true;
 }
 
-QString run(QString binFile, int n) // binFile should be absolute path of the bin file
+int run(QString binFile, int n) // binFile should be absolute path of the bin file
 {
     QProcess p;
     QString command = "/bin/bash -c "
@@ -74,9 +78,8 @@ QString run(QString binFile, int n) // binFile should be absolute path of the bi
     p.waitForFinished();
 
     qint64 time { timer.elapsed() };
-
-    QString elapsedTime = "for n=" + QString::number(n) + ":\t "  + QString::number(time) + " ms";
-    return elapsedTime;
+    // qDebug() << p.readAllStandardOutput();
+    return time;
 }
 
 void MainWindow::selectBin()
@@ -94,11 +97,15 @@ void MainWindow::selectBin()
 
 void MainWindow::start()
 {
-
     if(check())
     {
-        // QString list for QStringListModel
-        QStringList outputList; // managed by the mainwindow
+        // // QString list for QStringListModel
+        // QStringList outputList; // managed by the mainwindow
+
+        // FOR THE PLOT
+        QVector<double> x;
+        QVector<double> y;
+
         // get range
         int from = ui->fromLineEdit->text().toInt();
         int to = ui->toLineEdit->text().toInt();
@@ -106,16 +113,36 @@ void MainWindow::start()
 
         while(from <= to)
         {
-            outputList <<  run(mBinFile,from);
+            x.push_back(from);
+            int time = run(mBinFile,from);
+            y.push_back(time);
+            // outputList << QString::number(time);
             from += step;
         }
 
-        // the QStringListModel
-        auto model = new QStringListModel(outputList);
+        // // the QStringListModel
+        // auto model = new QStringListModel(outputList);
 
-        auto v = new QListView();
-        v->setModel(model);
-        v->show();
+        // auto v = new QListView();
+        // v->setModel(model);
+        // v->show();
+
+        displayPlot(x, y);
     }
 }
 
+void MainWindow::displayPlot(QVector<double> &x, QVector<double> &y)
+{
+    if(mpPlot == nullptr)
+    {
+        mpPlot = new PlotWindow(this);
+    }
+
+    if(!mpPlot->displayGraph(x, y))
+    {
+        qDebug() << "Plot cannot be displayed";
+        return;
+    }
+
+    mpPlot->show();
+}

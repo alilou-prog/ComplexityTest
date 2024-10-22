@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QStringList>
+class PlotWindow;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -20,9 +20,11 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    PlotWindow *mpPlot;
     QString mBinDir;
     QString mBinFile;
     bool check() const;
+    void displayPlot(QVector<double> &,QVector<double> &);
 
 private slots:
     void start();
